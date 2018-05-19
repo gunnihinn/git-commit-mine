@@ -1,11 +1,18 @@
 extern crate sha1;
 
 struct Commit {
-        metadata: Vec<u8>,
-        message: Vec<u8>,
+    metadata: Vec<u8>,
+    message: Vec<u8>,
 }
 
 impl Commit {
+    fn new(metadata: &str, message: &str) -> Commit {
+        Commit {
+            metadata: string_to_vec(metadata),
+            message: string_to_vec(message),
+        }
+    }
+
     fn length(&self) -> usize {
         return self.metadata.len() + 2 + self.message.len();
     }
@@ -48,21 +55,18 @@ mod tests {
     use super::*;
     #[test]
     fn test_length_1() {
-        let c = Commit {
-            metadata: vec![0, 1, 2, 3],
-            message: vec![4, 5, 6, 7, 8, 9],
-        };
+        let c = Commit::new("fooo", "barbar");
         assert_eq!(c.length(), 12);
     }
 
     #[test]
     fn test_sha1_1() {
-        let c = Commit {
-            metadata: string_to_vec("tree 3a52ea9c086dae34c11faa2822d59fca1170de79
+        let c = Commit::new(
+            "tree 3a52ea9c086dae34c11faa2822d59fca1170de79
 author Gunnar Þór Magnússon <gunnar.magnusson@booking.com> 1526705189 +0200
-committer Gunnar Þór Magnússon <gunnar.magnusson@booking.com> 1526705189 +0200"),
-            message: string_to_vec("Calculate length of Commits\n"),
-        };
+committer Gunnar Þór Magnússon <gunnar.magnusson@booking.com> 1526705189 +0200",
+            "Calculate length of Commits\n",
+        );
 
         let exp = "dfae4d199157e7f5c6b2f81cddb102215db12fa3";
         assert_eq!(c.sha1().to_string(), exp);
@@ -70,13 +74,13 @@ committer Gunnar Þór Magnússon <gunnar.magnusson@booking.com> 1526705189 +020
 
     #[test]
     fn test_annotate_1() {
-        let c = Commit {
-            metadata: string_to_vec("tree 4ea62912d025c113066dab31e6135bd76277af91
+        let c = Commit::new(
+            "tree 4ea62912d025c113066dab31e6135bd76277af91
 parent dfae4d199157e7f5c6b2f81cddb102215db12fa3
 author Gunnar Þór Magnússon <gunnar.magnusson@booking.com> 1526714241 +0200
-committer Gunnar Þór Magnússon <gunnar.magnusson@booking.com> 1526714241 +0200"),
-            message: string_to_vec("Calculate sha1 of commits\n"),
-        };
+committer Gunnar Þór Magnússon <gunnar.magnusson@booking.com> 1526714241 +0200",
+            "Calculate sha1 of commits\n",
+        );
 
         let exp = "ac7569d5798d67bad1b80d8aa43245aca8b5fdec";
         assert_eq!(c.annotate("gthm-id", 100).to_string(), exp);
