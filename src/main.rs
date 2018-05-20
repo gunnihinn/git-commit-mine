@@ -1,7 +1,10 @@
 extern crate sha1;
+#[macro_use]
+extern crate structopt;
 
 use std::process::Command;
 use std::str;
+use structopt::StructOpt;
 
 struct Commit {
     metadata: Vec<u8>,
@@ -163,7 +166,18 @@ fn count_zeros(hash: std::string::String) -> usize {
     return hash.len();
 }
 
+#[derive(StructOpt, Debug)]
+#[structopt(name = "git-commit-mine")]
+struct Opt {
+    #[structopt(short = "z", long = "zeros", default_value = "0")]
+    zeros: usize,
+    #[structopt(name = "PREFIX")]
+    prefix: String,
+}
+
 fn main() {
+    let opt = Opt::from_args();
+
     let output = Command::new("git")
         .arg("cat-file")
         .arg("commit")
@@ -176,20 +190,16 @@ fn main() {
         Err(e) => panic!("Invalid UTF-8 sequence: {}", e),
     };
 
-    let prefix = "gthm-id";
-
     let (metadata, message) = Commit::split_bytes(&output.stdout);
     let c = Commit {
         metadata: metadata,
         message: message,
-        prefix: string_to_vec(prefix),
+        prefix: string_to_vec(&opt.prefix),
     };
 
-    let target = 6;
-
     for n in 0.. {
-        if count_zeros(c.annotate(n).to_string()) >= target {
-            println!("{} {}", prefix, n);
+        if count_zeros(c.annotate(n).to_string()) >= opt.zeros {
+            println!("{} {}", opt.prefix, n);
             break;
         }
     }
