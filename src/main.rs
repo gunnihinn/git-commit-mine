@@ -144,6 +144,17 @@ committer Gunnar Þór Magnússon <gunnar.magnusson@booking.com> 1526714241 +020
         let exp = "ac7569d5798d67bad1b80d8aa43245aca8b5fdec";
         assert_eq!(c.annotate(100).to_string(), exp);
     }
+
+    #[test]
+    fn test_split_bytes_1() {
+        let bs = string_to_vec("asdf\n\nqwer");
+        let (got1, got2) = Commit::split_bytes(&bs);
+        let exp1 = string_to_vec("asdf");
+        let exp2 = string_to_vec("qwer");
+
+        assert_eq!(got1, exp1);
+        assert_eq!(got2, exp2);
+    }
 }
 
 fn count_zeros(hash: std::string::String) -> usize {
