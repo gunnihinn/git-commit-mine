@@ -1,6 +1,6 @@
 [package]
 name = "git-commit-mine"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["'Gunnar Þór Magnússon' <gunnar.magnusson@booking.com>"]
 
 [dependencies]

@@ -1,0 +1,11 @@
+# CHANGELOG
+
+## 0.1.1
+
+- Builds handled by Make.
+- First version of the program installed.
+
+## 0.1.0
+
+- Tests cover the basic SHA1 hashing functionality.
+- The program works as expected based on manual testing.
