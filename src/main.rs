@@ -33,23 +33,30 @@ impl Commit {
         let mut metadata = Vec::new();
         let mut message = Vec::new();
 
-        let mut i: usize = 0;
-        let mut md: bool = true;
-        while i < bytes.len() {
-            if md {
-                if bytes[i] == b'\n' && bytes[i + 1] == b'\n' {
-                    md = false;
-                    i += 1;
-                } else {
-                    metadata.push(bytes[i]);
-                }
-            } else {
-                message.push(bytes[i]);
-            }
-            i += 1;
+        let i = Commit::find_splitting_index(&bytes);
+
+        for j in 0..i {
+            metadata.push(bytes[j]);
+        }
+
+        for j in i + 2..bytes.len() {
+            message.push(bytes[j]);
         }
 
         return (metadata, message);
+    }
+
+    fn find_splitting_index(bytes: &Vec<u8>) -> usize {
+        let x = bytes.iter();
+        let mut y = bytes.iter();
+        y.next();
+        for (i, (a, b)) in x.zip(y).enumerate() {
+            if *a == b'\n' && *b == b'\n' {
+                return i;
+            }
+        }
+
+        bytes.len()
     }
 
     fn length(&self) -> usize {
