@@ -29,7 +29,7 @@ impl Commit {
         }
     }
 
-    fn split_bytes(bytes: &Vec<u8>) -> (Vec<u8>, Vec<u8>) {
+    fn split_bytes(bytes: Vec<u8>) -> (Vec<u8>, Vec<u8>) {
         let mut metadata = Vec::new();
         let mut message = Vec::new();
 
@@ -148,7 +148,7 @@ committer Gunnar Þór Magnússon <gunnar.magnusson@booking.com> 1526714241 +020
     #[test]
     fn test_split_bytes_1() {
         let bs = string_to_vec("asdf\n\nqwer");
-        let (got1, got2) = Commit::split_bytes(&bs);
+        let (got1, got2) = Commit::split_bytes(bs);
         let exp1 = string_to_vec("asdf");
         let exp2 = string_to_vec("qwer");
 
@@ -186,7 +186,7 @@ fn main() {
         .output()
         .expect("Failed to execute command");
 
-    let (metadata, message) = Commit::split_bytes(&output.stdout);
+    let (metadata, message) = Commit::split_bytes(output.stdout);
     let c = Commit {
         metadata: metadata,
         message: message,
