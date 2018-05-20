@@ -52,16 +52,6 @@ impl Commit {
         return (metadata, message);
     }
 
-    fn from_bytes(bytes: &Vec<u8>) -> Commit {
-        let (metadata, message) = Commit::split_bytes(bytes);
-
-        Commit {
-            metadata: metadata,
-            message: message,
-            prefix: Vec::new(),
-        }
-    }
-
     fn length(&self) -> usize {
         self.metadata.len() + 2 + self.message.len()
     }
@@ -184,11 +174,6 @@ fn main() {
         .arg("HEAD")
         .output()
         .expect("Failed to execute command");
-
-    let o = match str::from_utf8(&output.stdout) {
-        Ok(v) => v,
-        Err(e) => panic!("Invalid UTF-8 sequence: {}", e),
-    };
 
     let (metadata, message) = Commit::split_bytes(&output.stdout);
     let c = Commit {
