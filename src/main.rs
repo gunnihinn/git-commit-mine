@@ -1,5 +1,8 @@
 extern crate sha1;
 
+use std::process::Command;
+use std::str;
+
 struct Commit {
     metadata: Vec<u8>,
     message: Vec<u8>,
@@ -20,6 +23,39 @@ impl Commit {
             metadata: string_to_vec(metadata),
             message: string_to_vec(message),
             prefix: string_to_vec(prefix),
+        }
+    }
+
+    fn split_bytes(bytes: &Vec<u8>) -> (Vec<u8>, Vec<u8>) {
+        let mut metadata = Vec::new();
+        let mut message = Vec::new();
+
+        let mut i: usize = 0;
+        let mut md: bool = true;
+        while i < bytes.len() {
+            if md {
+                if bytes[i] == b'\n' && bytes[i + 1] == b'\n' {
+                    md = false;
+                    i += 1;
+                } else {
+                    metadata.push(bytes[i]);
+                }
+            } else {
+                message.push(bytes[i]);
+            }
+            i += 1;
+        }
+
+        return (metadata, message);
+    }
+
+    fn from_bytes(bytes: &Vec<u8>) -> Commit {
+        let (metadata, message) = Commit::split_bytes(bytes);
+
+        Commit {
+            metadata: metadata,
+            message: message,
+            prefix: Vec::new(),
         }
     }
 
@@ -117,6 +153,44 @@ committer Gunnar Þór Magnússon <gunnar.magnusson@booking.com> 1526714241 +020
     }
 }
 
+fn count_zeros(hash: std::string::String) -> usize {
+    for (i, c) in hash.chars().enumerate() {
+        if c != '0' {
+            return i;
+        }
+    }
+
+    return hash.len();
+}
+
 fn main() {
-    println!("Hello, world!");
+    let output = Command::new("git")
+        .arg("cat-file")
+        .arg("commit")
+        .arg("HEAD")
+        .output()
+        .expect("Failed to execute command");
+
+    let o = match str::from_utf8(&output.stdout) {
+        Ok(v) => v,
+        Err(e) => panic!("Invalid UTF-8 sequence: {}", e),
+    };
+
+    let prefix = "gthm-id";
+
+    let (metadata, message) = Commit::split_bytes(&output.stdout);
+    let c = Commit {
+        metadata: metadata,
+        message: message,
+        prefix: string_to_vec(prefix),
+    };
+
+    let target = 6;
+
+    for n in 0.. {
+        if count_zeros(c.annotate(n).to_string()) >= target {
+            println!("{} {}", prefix, n);
+            break;
+        }
+    }
 }
