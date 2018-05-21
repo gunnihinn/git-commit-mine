@@ -40,13 +40,14 @@ impl Commit {
     }
 
     fn find_splitting_index(bytes: &Vec<u8>) -> usize {
-        for (i, (a, b)) in bytes.iter().zip(bytes.iter().skip(1)).enumerate() {
-            if *a == b'\n' && *b == b'\n' {
-                return i;
-            }
+        match bytes
+            .iter()
+            .zip(bytes.iter().skip(1))
+            .position(|(&a, &b)| a == b'\n' && b == b'\n')
+        {
+            Some(i) => i,
+            None => bytes.len(),
         }
-
-        bytes.len()
     }
 
     fn length(&self) -> usize {
@@ -148,6 +149,17 @@ committer Gunnar Þór Magnússon <gunnar.magnusson@booking.com> 1526714241 +020
         let (got1, got2) = Commit::split_bytes(bs);
         let exp1 = string_to_vec("asdf");
         let exp2 = string_to_vec("qwer");
+
+        assert_eq!(got1, exp1);
+        assert_eq!(got2, exp2);
+    }
+
+    #[test]
+    fn test_split_bytes_2() {
+        let bs = string_to_vec("asdf");
+        let (got1, got2) = Commit::split_bytes(bs);
+        let exp1 = string_to_vec("asdf");
+        let exp2: Vec<u8> = Vec::new();
 
         assert_eq!(got1, exp1);
         assert_eq!(got2, exp2);
