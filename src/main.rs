@@ -31,18 +31,10 @@ impl Commit {
     }
 
     fn split_bytes(bytes: Vec<u8>) -> (Vec<u8>, Vec<u8>) {
-        let mut metadata = Vec::new();
-        let mut message = Vec::new();
-
         let i = Commit::find_splitting_index(&bytes);
 
-        for j in 0..i {
-            metadata.push(bytes[j]);
-        }
-
-        for j in i + 2..bytes.len() {
-            message.push(bytes[j]);
-        }
+        let metadata: Vec<u8> = bytes.iter().take(i).map(|&x| x).collect();
+        let message: Vec<u8> = bytes.iter().skip(i + 2).map(|&x| x).collect();
 
         return (metadata, message);
     }
