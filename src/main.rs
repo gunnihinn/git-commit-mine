@@ -48,10 +48,7 @@ impl Commit {
     }
 
     fn find_splitting_index(bytes: &Vec<u8>) -> usize {
-        let x = bytes.iter();
-        let mut y = bytes.iter();
-        y.next();
-        for (i, (a, b)) in x.zip(y).enumerate() {
+        for (i, (a, b)) in bytes.iter().zip(bytes.iter().skip(1)).enumerate() {
             if *a == b'\n' && *b == b'\n' {
                 return i;
             }

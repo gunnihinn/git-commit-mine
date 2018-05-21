@@ -11,5 +11,5 @@ check: $(src)
 $(out): $(src)
 	cargo build --release
 
-install: $(out)
+install: check $(out)
 	install -c $(out) $(bin)
