@@ -4,6 +4,7 @@ extern crate structopt;
 
 use std::process::Command;
 use std::str;
+use std::time::{Duration, Instant};
 use structopt::StructOpt;
 
 struct Commit {
@@ -177,7 +178,9 @@ fn count_zeros(hash: std::string::String) -> usize {
 #[derive(StructOpt, Debug)]
 #[structopt(name = "git-commit-mine")]
 struct Opt {
-    #[structopt(short = "z", long = "zeros", default_value = "0")]
+    #[structopt(short = "t", long = "timeout", default_value = "0")]
+    timeout: u64,
+    #[structopt(short = "z", long = "zeros", default_value = "6")]
     zeros: usize,
     #[structopt(name = "PREFIX")]
     prefix: String,
@@ -200,10 +203,33 @@ fn main() {
         prefix: string_to_vec(&opt.prefix),
     };
 
+    let start = Instant::now();
+    let timeout = Duration::new(
+        match opt.timeout {
+            0 => std::u64::MAX,
+            _ => opt.timeout,
+        },
+        0,
+    );
+
+    let mut best_nonce = 0;
+    let mut best_zeros = 0;
+
     for n in 0.. {
-        if count_zeros(c.annotate(n).to_string()) >= opt.zeros {
-            println!("{} {}", opt.prefix, n);
+        let z = count_zeros(c.annotate(n).to_string());
+        if z > best_zeros {
+            best_zeros = z;
+            best_nonce = n;
+            println!("{} zeros: '{} {}'", z, opt.prefix, n);
+        }
+
+        if best_zeros >= opt.zeros || start.elapsed() > timeout {
             break;
         }
     }
+
+    println!(
+        "Best result: {} zeros '{} {}'",
+        best_zeros, opt.prefix, best_nonce
+    );
 }
