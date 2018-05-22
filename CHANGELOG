@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 0.1.3
+
+- Mining is multithreaded.
+- Blob splitting is even more modern, thus better.
+
 ## 0.1.2
 
 - Program can be told to time out.
