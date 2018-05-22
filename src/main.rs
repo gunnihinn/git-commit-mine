@@ -1,13 +1,20 @@
 extern crate sha1;
 #[macro_use]
 extern crate structopt;
+extern crate num_cpus;
 
+use std::cmp;
 use std::cmp::Ordering;
 use std::process::Command;
 use std::str;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering as AtomicOrdering};
+use std::sync::mpsc::{channel, Sender};
+use std::thread;
 use std::time::{Duration, Instant};
 use structopt::StructOpt;
 
+#[derive(Clone)]
 struct Commit {
     metadata: Vec<u8>,
     message: Vec<u8>,
@@ -184,11 +191,13 @@ struct Opt {
     timeout: u64,
     #[structopt(short = "z", long = "zeros", default_value = "6")]
     zeros: usize,
+    #[structopt(long = "threads", default_value = "0")]
+    threads: usize,
     #[structopt(name = "PREFIX")]
     prefix: String,
 }
 
-#[derive(Eq)]
+#[derive(Eq, Copy, Clone)]
 struct Nugget {
     nonce: u64,
     zeros: usize,
@@ -251,20 +260,46 @@ fn main() {
         0,
     );
 
-    let mut nugget = Nugget::new(0, 0);
+    let threads = match opt.threads {
+        0 => num_cpus::get(),
+        _ => cmp::min(opt.threads, num_cpus::get()),
+    };
 
-    for n in 0.. {
-        let b = Nugget::new(n, count_zeros(c.annotate(n).to_string()));
+    let n = Arc::new(AtomicUsize::new(0));
+    let (sender, receiver) = channel();
 
-        if nugget.cmp(&b) == Ordering::Less {
-            nugget = b;
-            println!("{}", nugget.string(&opt.prefix));
+    for _ in 0..threads {
+        let n = Arc::clone(&n);
+        let results = Sender::clone(&sender);
+        let c = c.clone();
+
+        thread::spawn(move || {
+            let mut local_best = Nugget::new(0, 0);
+            loop {
+                // Ordering::Relaxed seems to be OK here according to:
+                // https://doc.rust-lang.org/nomicon/atomics.html
+                let m = n.fetch_add(1, AtomicOrdering::Relaxed) as u64;
+
+                let b = Nugget::new(m, count_zeros(c.annotate(m).to_string()));
+                if local_best.cmp(&b) == Ordering::Less {
+                    local_best = b;
+                    results.send(b).unwrap();
+                }
+            }
+        });
+    }
+
+    let mut best = Nugget::new(0, 0);
+    for b in receiver {
+        if best.cmp(&b) == Ordering::Less {
+            best = b;
+            println!("{}", best.string(&opt.prefix));
         }
 
-        if nugget.zeros >= opt.zeros || start.elapsed() > timeout {
+        if best.zeros >= opt.zeros || start.elapsed() > timeout {
             break;
         }
     }
 
-    println!("Best result: {}", nugget.string(&opt.prefix));
+    println!("Best result: {}", best.string(&opt.prefix));
 }

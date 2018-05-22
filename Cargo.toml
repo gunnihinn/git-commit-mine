@@ -6,3 +6,4 @@ authors = ["'Gunnar Þór Magnússon' <gunnar.magnusson@booking.com>"]
 [dependencies]
 sha1 = "0.6.0"
 structopt = "0.2"
+num_cpus = "1.8.0"
