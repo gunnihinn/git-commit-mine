@@ -2,6 +2,7 @@ extern crate sha1;
 #[macro_use]
 extern crate structopt;
 
+use std::cmp::Ordering;
 use std::process::Command;
 use std::str;
 use std::time::{Duration, Instant};
@@ -187,6 +188,43 @@ struct Opt {
     prefix: String,
 }
 
+#[derive(Eq)]
+struct Nugget {
+    nonce: u64,
+    zeros: usize,
+}
+
+impl Nugget {
+    fn new(nonce: u64, zeros: usize) -> Nugget {
+        Nugget {
+            nonce: nonce,
+            zeros: zeros,
+        }
+    }
+
+    fn string(&self, prefix: &String) -> String {
+        format!("{} zeros: '{} {}'", self.zeros, prefix, self.nonce)
+    }
+}
+
+impl Ord for Nugget {
+    fn cmp(&self, other: &Nugget) -> Ordering {
+        self.zeros.cmp(&other.zeros)
+    }
+}
+
+impl PartialOrd for Nugget {
+    fn partial_cmp(&self, other: &Nugget) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl PartialEq for Nugget {
+    fn eq(&self, other: &Nugget) -> bool {
+        self.zeros == other.zeros
+    }
+}
+
 fn main() {
     let opt = Opt::from_args();
 
@@ -213,24 +251,20 @@ fn main() {
         0,
     );
 
-    let mut best_nonce = 0;
-    let mut best_zeros = 0;
+    let mut nugget = Nugget::new(0, 0);
 
     for n in 0.. {
-        let z = count_zeros(c.annotate(n).to_string());
-        if z > best_zeros {
-            best_zeros = z;
-            best_nonce = n;
-            println!("{} zeros: '{} {}'", z, opt.prefix, n);
+        let b = Nugget::new(n, count_zeros(c.annotate(n).to_string()));
+
+        if nugget.cmp(&b) == Ordering::Less {
+            nugget = b;
+            println!("{}", nugget.string(&opt.prefix));
         }
 
-        if best_zeros >= opt.zeros || start.elapsed() > timeout {
+        if nugget.zeros >= opt.zeros || start.elapsed() > timeout {
             break;
         }
     }
 
-    println!(
-        "Best result: {} zeros '{} {}'",
-        best_zeros, opt.prefix, best_nonce
-    );
+    println!("Best result: {}", nugget.string(&opt.prefix));
 }
