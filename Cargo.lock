@@ -37,7 +37,7 @@ dependencies = [
 
 [[package]]
 name = "git-commit-mine"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "num_cpus 1.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sha1 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
