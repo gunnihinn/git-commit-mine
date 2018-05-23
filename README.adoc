@@ -1,0 +1,38 @@
+= Git commit mine
+
+Git commit mine is a Git commit hash miner.
+
+== Use
+
+Run the miner in a Git repository:
+----
+$ git-commit-mine [OPTION...] PREFIX
+----
+The `PREFIX` is required. The miner will insert a nonce of the form `PREFIX $n`
+into the metadata of the commit object of the `HEAD` commit in the repo. It
+will print its progress to standard output.
+
+Modifying the commit object to contain any desired nonce is an exercise left
+for the reader.
+
+== Options
+
+----
+-t, --timeout SECONDS   The maximum time to run in seconds. Default: Unlimited.
+-z, --zeros ZEROS       The number of leading zeros to look for. Default: 6.
+--threads THREADS       The number of miner threads to use. Default: The number
+                        of machine CPU cores.
+-h, --help              Print help and exit.
+-V, --version           Print version and exit.
+----
+
+== Installation
+
+Assuming you have Rust and Cargo installed:
+----
+$ make install
+----
+
+== License
+
+This software is licensed under the GPL v3.
