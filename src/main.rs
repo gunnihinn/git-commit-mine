@@ -45,8 +45,8 @@ impl Commit {
     fn split_bytes(bytes: Vec<u8>) -> (Vec<u8>, Vec<u8>) {
         let i = Commit::find_splitting_index(&bytes);
 
-        let metadata: Vec<u8> = bytes.iter().take(i).map(|&x| x).collect();
-        let message: Vec<u8> = bytes.iter().skip(i + 2).map(|&x| x).collect();
+        let metadata = bytes[0..i].to_vec();
+        let message = bytes[cmp::min(i + 2, bytes.len())..].to_vec();
 
         return (metadata, message);
     }
