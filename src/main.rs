@@ -22,20 +22,24 @@ struct Commit {
 }
 
 impl Commit {
-    fn new(metadata: &str, message: &str) -> Commit {
+    fn new() -> Commit {
         Commit {
-            metadata: string_to_vec(metadata),
-            message: string_to_vec(message),
+            metadata: Vec::new(),
+            message: Vec::new(),
             prefix: Vec::new(),
         }
     }
 
-    fn new_with_prefix(metadata: &str, message: &str, prefix: &str) -> Commit {
-        Commit {
-            metadata: string_to_vec(metadata),
-            message: string_to_vec(message),
-            prefix: string_to_vec(prefix),
-        }
+    fn metadata(self, metadata: Vec<u8>) -> Commit {
+        Commit { metadata, ..self }
+    }
+
+    fn message(self, message: Vec<u8>) -> Commit {
+        Commit { message, ..self }
+    }
+
+    fn prefix(self, prefix: Vec<u8>) -> Commit {
+        Commit { prefix, ..self }
     }
 
     fn split_bytes(bytes: Vec<u8>) -> (Vec<u8>, Vec<u8>) {
@@ -66,6 +70,7 @@ impl Commit {
         self.length() + self.prefix.len() + 1 + base_10_length(nonce) + 1
     }
 
+    #[cfg(test)]
     fn sha1(&self) -> sha1::Digest {
         let mut m = sha1::Sha1::new();
 
@@ -108,13 +113,18 @@ mod tests {
 
     #[test]
     fn test_length_1() {
-        let c = Commit::new("fooo", "barbar");
+        let meta = string_to_vec("fooo");
+        let msg = string_to_vec("barbar");
+        let c = Commit::new().metadata(meta).message(msg);
         assert_eq!(c.length(), 12);
     }
 
     #[test]
     fn test_prefix_length_1() {
-        let c = Commit::new_with_prefix("fooo", "barbar", "spam");
+        let meta = string_to_vec("fooo");
+        let msg = string_to_vec("barbar");
+        let prefix = string_to_vec("spam");
+        let c = Commit::new().metadata(meta).message(msg).prefix(prefix);
         assert_eq!(c.length(), 12);
         assert_eq!(c.prefix_length(0), c.length() + 4 + 1 + 1 + 1);
         assert_eq!(c.prefix_length(1), c.length() + 4 + 1 + 1 + 1);
@@ -125,12 +135,13 @@ mod tests {
 
     #[test]
     fn test_sha1_1() {
-        let c = Commit::new(
+        let meta = string_to_vec(
             "tree 3a52ea9c086dae34c11faa2822d59fca1170de79
 author Gunnar Þór Magnússon <gunnar.magnusson@booking.com> 1526705189 +0200
 committer Gunnar Þór Magnússon <gunnar.magnusson@booking.com> 1526705189 +0200",
-            "Calculate length of Commits\n",
         );
+        let msg = string_to_vec("Calculate length of Commits\n");
+        let c = Commit::new().metadata(meta).message(msg);
 
         let exp = "dfae4d199157e7f5c6b2f81cddb102215db12fa3";
         assert_eq!(c.sha1().to_string(), exp);
@@ -138,14 +149,15 @@ committer Gunnar Þór Magnússon <gunnar.magnusson@booking.com> 1526705189 +020
 
     #[test]
     fn test_annotate_1() {
-        let c = Commit::new_with_prefix(
+        let meta = string_to_vec(
             "tree 4ea62912d025c113066dab31e6135bd76277af91
 parent dfae4d199157e7f5c6b2f81cddb102215db12fa3
 author Gunnar Þór Magnússon <gunnar.magnusson@booking.com> 1526714241 +0200
 committer Gunnar Þór Magnússon <gunnar.magnusson@booking.com> 1526714241 +0200",
-            "Calculate sha1 of commits\n",
-            "gthm-id",
         );
+        let msg = string_to_vec("Calculate sha1 of commits\n");
+        let prefix = string_to_vec("gthm-id");
+        let c = Commit::new().metadata(meta).message(msg).prefix(prefix);
 
         let exp = "ac7569d5798d67bad1b80d8aa43245aca8b5fdec";
         assert_eq!(c.annotate(100).to_string(), exp);
@@ -172,6 +184,16 @@ committer Gunnar Þór Magnússon <gunnar.magnusson@booking.com> 1526714241 +020
         assert_eq!(got1, exp1);
         assert_eq!(got2, exp2);
     }
+
+    #[test]
+    fn test_builder_mutability() {
+        let a = string_to_vec("A");
+        let b = string_to_vec("B");
+        let c = Commit::new().message(a).message(b);
+
+        assert_eq!(c.message, string_to_vec("B"));
+    }
+
 }
 
 fn count_zeros(hash: std::string::String) -> usize {
@@ -245,11 +267,10 @@ fn main() {
         .expect("Failed to execute command");
 
     let (metadata, message) = Commit::split_bytes(output.stdout);
-    let c = Commit {
-        metadata: metadata,
-        message: message,
-        prefix: string_to_vec(&opt.prefix),
-    };
+    let c = Commit::new()
+        .metadata(metadata)
+        .message(message)
+        .prefix(string_to_vec(&opt.prefix));
 
     let start = Instant::now();
     let timeout = Duration::new(
