@@ -7,8 +7,6 @@ use std::cmp;
 use std::cmp::Ordering;
 use std::process::Command;
 use std::str;
-use std::sync::Arc;
-use std::sync::atomic::{AtomicUsize, Ordering as AtomicOrdering};
 use std::sync::mpsc::{channel, Sender};
 use std::thread;
 use std::time::{Duration, Instant};
@@ -286,26 +284,24 @@ fn main() {
         _ => cmp::min(opt.threads, num_cpus::get()),
     };
 
-    let n = Arc::new(AtomicUsize::new(0));
     let (sender, receiver) = channel();
 
-    for _ in 0..threads {
-        let n = Arc::clone(&n);
+    for i in 0..threads {
         let results = Sender::clone(&sender);
         let c = c.clone();
 
         thread::spawn(move || {
             let mut local_best = Nugget::new(0, 0);
+            let mut n = i as u64;
             loop {
-                // Ordering::Relaxed seems to be OK here according to:
-                // https://doc.rust-lang.org/nomicon/atomics.html
-                let m = n.fetch_add(1, AtomicOrdering::Relaxed) as u64;
+                let b = Nugget::new(n, count_zeros(c.annotate(n).to_string()));
 
-                let b = Nugget::new(m, count_zeros(c.annotate(m).to_string()));
                 if local_best.cmp(&b) == Ordering::Less {
                     local_best = b;
                     results.send(b).unwrap();
                 }
+
+                n += threads as u64
             }
         });
     }
